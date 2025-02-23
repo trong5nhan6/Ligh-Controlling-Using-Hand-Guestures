@@ -8,3 +8,4 @@ pandas
 mediapipe>=0.10.0
 torch==2.5.0
 pyserial
+torchmetrics
