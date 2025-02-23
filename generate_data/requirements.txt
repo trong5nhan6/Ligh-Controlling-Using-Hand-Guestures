@@ -1,0 +1,10 @@
+numpy>=1.24.0
+opencv-python>=4.8.0
+pillow
+pascal_voc_writer
+cvzone
+PyYAML>=6.0
+pandas
+mediapipe>=0.10.0
+torch==2.5.0
+pyserial
