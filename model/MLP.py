@@ -22,7 +22,8 @@ class NeuralNetwork(nn.Module):
     def __init__(self):
         super(NeuralNetwork, self).__init__()
         self.flatten = nn.Flatten()
-        list_label = label_dict_from_config_file("hand_gesture.yaml")
+        list_label = label_dict_from_config_file(
+            "generate_data/hand_gesture.yaml")
         self.linear_relu_stack = nn.Sequential(
             nn.Linear(63, 128),
             nn.ReLU(),
@@ -121,7 +122,7 @@ class EarlyStopper:
         return False
 
 
-def train(trainloader, val_loader, model, loss_function, early_stopper, optimizer):
+def train(trainloader, val_loader, model, loss_function, early_stopper, optimizer, LIST_LABEL, save_path):
     # add auroc score
     best_vloss = 1_000_000
     timestamp = datetime.now().strftime('%d-%m %H:%M')
@@ -183,12 +184,34 @@ def train(trainloader, val_loader, model, loss_function, early_stopper, optimize
     return model, best_model_path
 
 
+def evaluate(best_model_path):
+    list_label = label_dict_from_config_file("generate_data/hand_gesture.yaml")
+    DATA_FOLDER_PATH = "generate_data/data2/"
+    testset = CustomImageDataset(os.path.join(
+        DATA_FOLDER_PATH, "landmark_test.csv"))
+    test_loader = torch.utils.data.DataLoader(
+        testset, batch_size=20, shuffle=False)
+
+    network = NeuralNetwork()
+    network.load_state_dict(torch.load(best_model_path, weights_only=False))
+
+    network.eval()
+    acc_test = Accuracy(num_classes=len(list_label), task='MULTICLASS')
+    for i, test_data in enumerate(test_loader):
+        test_input, test_label = test_data
+        preds = network(test_input)
+        acc_test.update(preds, test_label)
+    print(network.__class__.__name__)
+    print(f"Accuracy of model:{acc_test.compute().item()}")
+    print("========================================================================")
+
+
 def main():
     DATA_FOLDER_PATH = "generate_data/data2/"
     LIST_LABEL = label_dict_from_config_file("generate_data/hand_gesture.yaml")
     train_path = os.path.join(DATA_FOLDER_PATH, "landmark_train.csv")
     val_path = os.path.join(DATA_FOLDER_PATH, "landmark_val.csv")
-    save_path = './models'
+    save_path = './model'
     os.makedirs(save_path, exist_ok=True)
 
     trainset = CustomImageDataset(train_path)
@@ -205,7 +228,9 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
     model, best_model_path = train(
-        trainloader, val_loader, model, loss_function, early_stopper, optimizer)
+        trainloader, val_loader, model, loss_function, early_stopper, optimizer, LIST_LABEL, save_path)
+
+    evaluate(best_model_path)
 
 
 if __name__ == "__main__":
