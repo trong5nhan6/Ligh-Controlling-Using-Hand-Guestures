@@ -203,6 +203,7 @@ def evaluate(best_model_path):
         acc_test.update(preds, test_label)
     print(network.__class__.__name__)
     print(f"Accuracy of model:{acc_test.compute().item()}")
+    print(f'your best model path: {best_model_path}')
     print("========================================================================")
 
 
